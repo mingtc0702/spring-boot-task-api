@@ -1,0 +1,28 @@
+POST http://localhost:8080/api/tasks
+Content-Type: application/json
+
+{
+  "title": "Prepare for interview",
+  "description": "Review Java and Spring Boot",
+  "status": "TODO"
+}
+
+###
+GET http://localhost:8080/api/tasks
+
+###
+GET http://localhost:8080/api/tasks/1
+
+###
+PUT http://localhost:8080/api/tasks/1
+Content-Type: application/json
+
+{
+  "title": "Prepare for interview",
+  "description": "Finished Spring Boot review",
+  "status": "DONE"
+}
+
+
+###
+DELETE http://localhost:8080/api/tasks/1
