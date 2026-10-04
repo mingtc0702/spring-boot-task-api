@@ -26,3 +26,65 @@ Content-Type: application/json
 
 ###
 DELETE http://localhost:8080/api/tasks/1
+
+
+
+
+### Test 1 - Valid task
+POST http://localhost:8080/api/tasks
+Content-Type: application/json
+
+{
+  "title": "Learn Validation",
+  "description": "Practice Spring Boot validation",
+  "status": "DONE"
+}
+
+### Test 2 - Empty title
+POST http://localhost:8080/api/tasks
+Content-Type: application/json
+
+{
+  "title": "",
+  "description": "test",
+  "status": "TODO"
+}
+
+### Test 3 - Blank title
+POST http://localhost:8080/api/tasks
+Content-Type: application/json
+
+{
+  "title": "   ",
+  "description": "test",
+  "status": "TODO"
+}
+
+### Test 4 - Missing title
+POST http://localhost:8080/api/tasks
+Content-Type: application/json
+
+{
+  "description": "test",
+  "status": "TODO"
+}
+
+### Test 5 - Title longer than 100 characters
+POST http://localhost:8080/api/tasks
+Content-Type: application/json
+
+{
+  "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "description": "test",
+  "status": "TODO"
+}
+
+### Test 6 - Description longer than 500 characters
+POST http://localhost:8080/api/tasks
+Content-Type: application/json
+
+{
+  "title": "Valid title",
+  "description": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "TODO"
+}
