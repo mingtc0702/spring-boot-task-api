@@ -1,5 +1,6 @@
 package com.mt.taskapi.service;
 
+import com.mt.taskapi.exception.TaskNotFoundException;
 import com.mt.taskapi.model.Task;
 import com.mt.taskapi.repository.TaskRepository;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,7 @@ public class TaskService {
     public Task getTaskById(Long id) {
         return taskRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Task not found"));
+                        new TaskNotFoundException(id));
     }
 
     public Task createTask(Task task) {

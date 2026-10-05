@@ -88,3 +88,40 @@ Content-Type: application/json
   "description": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "status": "TODO"
 }
+
+
+### 1. Exisiting Task
+GET http://localhost:8080/api/tasks/1
+
+### 2. NON-EXISTING Task
+GET http://localhost:8080/api/tasks/999999
+
+### 3. new Task
+POST http://localhost:8080/api/tasks
+Content-Type: application/json
+
+{
+  "title": "Test exception handling",
+  "description": "Regression test",
+  "status": "TODO"
+}
+
+### 4. illegal Task
+POST http://localhost:8080/api/tasks
+Content-Type: application/json
+
+{
+  "title": "",
+  "description": "Invalid task",
+  "status": "TODO"
+}
+
+### 5. update Task
+PUT http://localhost:8080/api/tasks/3
+Content-Type: application/json
+
+{
+  "title": "Test exception handling",
+  "description": "Regression test",
+  "status": "DONE"
+}
