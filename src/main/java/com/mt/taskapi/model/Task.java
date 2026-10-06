@@ -22,13 +22,18 @@ public class Task {
     @Enumerated(EnumType.STRING)
     private TaskStatus status;
 
+    @ManyToOne
+    @JoinColumn(name = "project_id")
+    private Project project;
+
     public Task() {
     }
 
-    public Task(String title, String description, TaskStatus status) {
+    public Task(String title, String description, TaskStatus status, Project project) {
         this.title = title;
         this.description = description;
         this.status = status;
+        this.project = project;
     }
 
     public Long getId() {
@@ -47,6 +52,8 @@ public class Task {
         return status;
     }
 
+    public Project getProject(){return project;}
+
     public void setTitle(String title) {
         this.title = title;
     }
@@ -58,4 +65,6 @@ public class Task {
     public void setStatus(TaskStatus status) {
         this.status = status;
     }
+
+    public void setProject(Project project) {this.project = project;}
 }
