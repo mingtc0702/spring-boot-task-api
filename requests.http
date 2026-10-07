@@ -125,3 +125,73 @@ Content-Type: application/json
   "description": "Regression test",
   "status": "DONE"
 }
+
+
+###
+POST http://localhost:8080/api/projects
+Content-Type: application/json
+
+{
+  "name": "Job Search"
+}
+
+
+###
+GET http://localhost:8080/api/projects
+
+### Existing Project
+GET http://localhost:8080/api/projects/1
+
+### Non-existing Project
+GET http://localhost:8080/api/projects/999
+
+###
+POST http://localhost:8080/api/projects/1/tasks
+Content-Type: application/json
+
+{
+  "title": "Learn Spring Boot",
+  "description": "Practice REST APIs",
+  "status": "DONE"
+}
+
+### Create Task
+POST http://localhost:8080/api/projects/1/tasks
+Content-Type: application/json
+
+{
+  "title": "Learn DTO",
+  "description": "Practice Request and Response DTOs",
+  "status": "TODO"
+}
+
+
+### Invalid Task
+POST http://localhost:8080/api/projects/1/tasks
+Content-Type: application/json
+
+{
+  "title": "",
+  "description": "Invalid task",
+  "status": "TODO"
+}
+
+
+### Project with tasks
+GET http://localhost:8080/api/projects/1
+
+### Project without tasks
+GET http://localhost:8080/api/projects/2/tasks
+
+### Project does not exist
+GET http://localhost:8080/api/projects/999/tasks
+
+###
+POST http://localhost:8080/api/projects/1/tasks
+Content-Type: application/json
+
+{
+  "title": "",
+  "description": "Invalid task",
+  "status": "TODO"
+}
