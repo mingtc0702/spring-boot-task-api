@@ -1,6 +1,8 @@
+
 package com.mt.taskapi.controller;
 
-import com.mt.taskapi.model.Task;
+import com.mt.taskapi.dto.TaskRequest;
+import com.mt.taskapi.dto.TaskResponse;
 import com.mt.taskapi.service.TaskService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,31 +21,30 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<Task> getAllTasks() {
+    public List<TaskResponse> getAllTasks() {
         return taskService.getAllTasks();
     }
 
     @GetMapping("/{id}")
-    public Task getTaskById(@PathVariable Long id) {
+    public TaskResponse getTaskById(@PathVariable Long id) {
         return taskService.getTaskById(id);
     }
 
     @PostMapping
-    public Task createTask(@Valid @RequestBody Task task) {
-        return taskService.createTask(task);
+    public TaskResponse createTask(@Valid @RequestBody TaskRequest request) {
+        return taskService.createTask(request);
     }
 
     @PutMapping("/{id}")
-    public Task updateTask(
+    public TaskResponse updateTask(
             @PathVariable Long id,
-            @RequestBody Task task) {
+            @Valid @RequestBody TaskRequest request) {
 
-        return taskService.updateTask(id, task);
+        return taskService.updateTask(id, request);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTask(
-            @PathVariable Long id) {
+    public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
 
         taskService.deleteTask(id);
 

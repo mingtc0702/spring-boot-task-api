@@ -11,6 +11,7 @@ import com.mt.taskapi.model.Task;
 import com.mt.taskapi.dto.ProjectResponse;
 import java.util.List;
 import org.springframework.transaction.annotation.Transactional;
+import com.mt.taskapi.dto.ProjectRequest;
 
 
 
@@ -27,7 +28,21 @@ public class ProjectService {
         this.taskRepository = taskRepository;
     }
 
-    public Project createProject (Project project){return projectRepository.save(project);}
+
+    @Transactional
+    public ProjectResponse createProject(ProjectRequest request) {
+
+        Project project = new Project(request.name());
+
+        Project savedProject = projectRepository.save(project);
+
+        return new ProjectResponse(
+                savedProject.getId(),
+                savedProject.getName(),
+                List.of()
+        );
+    }
+
 
     @Transactional(readOnly = true)
     public List<ProjectResponse> getAllProjects() {

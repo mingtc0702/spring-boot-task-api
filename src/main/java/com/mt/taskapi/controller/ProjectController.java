@@ -3,13 +3,11 @@ package com.mt.taskapi.controller;
 import com.mt.taskapi.dto.ProjectResponse;
 import com.mt.taskapi.dto.TaskRequest;
 import com.mt.taskapi.dto.TaskResponse;
-import com.mt.taskapi.model.Project;
-import com.mt.taskapi.model.Task;
 import com.mt.taskapi.service.ProjectService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
+import com.mt.taskapi.dto.ProjectRequest;
 import java.util.List;
 
 @RestController
@@ -19,8 +17,14 @@ public class ProjectController {
 
     public ProjectController(ProjectService projectService){this.projectService = projectService;}
 
+
     @PostMapping
-    public Project createProject(@Valid @RequestBody Project project){return projectService.createProject(project);}
+    public ProjectResponse createProject(
+            @Valid @RequestBody ProjectRequest request) {
+
+        return projectService.createProject(request);
+    }
+
 
     @GetMapping
     public List<ProjectResponse> getAllProjects() {
