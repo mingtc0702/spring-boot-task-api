@@ -241,3 +241,38 @@ Content-Type: application/json
 
 ###
 GET http://localhost:8080/api/projects
+
+
+
+###day7
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+
+###
+GET http://localhost:8080/api/users/1
+
+###
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "name": "Bob",
+  "email": "not-an-email"
+}
+
+###
+GET http://localhost:8080/api/users/999999
+
+###
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "name": "Another Alice",
+  "email": "alice@example.com"
+}
