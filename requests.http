@@ -276,3 +276,49 @@ Content-Type: application/json
   "name": "Another Alice",
   "email": "alice@example.com"
 }
+
+###day8
+POST http://localhost:8080/api/users/1/projects
+Content-Type: application/json
+
+{
+  "name": "Spring Boot Learning"
+}
+
+###
+POST http://localhost:8080/api/users/999999/projects
+Content-Type: application/json
+
+{
+  "name": "Invalid Project"
+}
+
+###
+GET http://localhost:8080/api/users/1/projects
+
+###
+GET http://localhost:8080/api/users/999999/projects
+
+###
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "name": "Bob",
+  "email": "bob.day8@example.com"
+}
+
+
+###
+POST http://localhost:8080/api/users/4/projects
+Content-Type: application/json
+
+{
+  "name": "Bob's Project"
+}
+
+###
+GET http://localhost:8080/api/users/1/projects
+
+###
+GET http://localhost:8080/api/users/4/projects

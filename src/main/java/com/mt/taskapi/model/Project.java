@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -20,7 +21,7 @@ public class Project {
     private String name;
 
     @OneToMany(mappedBy = "project")
-    private List<Task> tasks;
+    private List<Task> tasks = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name = "user_id")

@@ -5,6 +5,7 @@ import com.mt.taskapi.exception.ProjectNotFoundException;
 import com.mt.taskapi.model.Project;
 import com.mt.taskapi.repository.ProjectRepository;
 import com.mt.taskapi.repository.TaskRepository;
+import com.mt.taskapi.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import com.mt.taskapi.dto.TaskResponse;
 import com.mt.taskapi.model.Task;
@@ -12,6 +13,8 @@ import com.mt.taskapi.dto.ProjectResponse;
 import java.util.List;
 import org.springframework.transaction.annotation.Transactional;
 import com.mt.taskapi.dto.ProjectRequest;
+import com.mt.taskapi.model.User;
+import com.mt.taskapi.exception.UserNotFoundException;
 
 
 
@@ -19,13 +22,16 @@ import com.mt.taskapi.dto.ProjectRequest;
 public class ProjectService {
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
+    private final UserRepository userRepository;
 
     public ProjectService(
             ProjectRepository projectRepository,
-            TaskRepository taskRepository) {
+            TaskRepository taskRepository,
+            UserRepository userRepository) {
 
         this.projectRepository = projectRepository;
         this.taskRepository = taskRepository;
+        this.userRepository = userRepository;
     }
 
 
@@ -114,7 +120,35 @@ public class ProjectService {
                 .toList();
     }
 
+    @Transactional
+    public ProjectResponse createProjectForUser(
+            Long userId,
+            ProjectRequest request) {
 
+        User user  = userRepository
+                .findById(userId)
+                .orElseThrow(()->new UserNotFoundException(userId));
 
+        Project project = new Project(request.name());
+
+        project.setUser(user);
+
+        Project savedProject = projectRepository.save(project);
+
+        return toProjectResponse(savedProject);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> getProjectsByUserId(Long userId) {
+
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException(userId);
+        }
+
+        return projectRepository.findByUserId(userId)
+                .stream()
+                .map(this::toProjectResponse)
+                .toList();
+    }
 
 }
