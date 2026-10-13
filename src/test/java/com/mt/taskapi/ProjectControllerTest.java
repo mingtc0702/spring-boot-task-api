@@ -19,8 +19,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+import org.springframework.security.test.context.support.WithMockUser;
+
+@SpringBootTest(properties = "app.demo.password=test-only-password")
 @AutoConfigureMockMvc
+@WithMockUser
 class ProjectControllerTest {
 
     @Autowired

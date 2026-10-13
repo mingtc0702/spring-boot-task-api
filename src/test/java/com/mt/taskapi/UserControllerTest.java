@@ -17,9 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+import org.springframework.security.test.context.support.WithMockUser;
+
+@SpringBootTest(properties = "app.demo.password=test-only-password")
 @AutoConfigureMockMvc
 @Transactional
+@WithMockUser
 class UserControllerTest {
 
     @Autowired
@@ -30,6 +33,7 @@ class UserControllerTest {
 
     @Autowired
     private ProjectRepository projectRepository;
+
 
     // =========================
     // Existing User API Tests
