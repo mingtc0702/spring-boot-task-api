@@ -8,14 +8,17 @@ import com.mt.taskapi.model.User;
 import com.mt.taskapi.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
 
@@ -28,7 +31,8 @@ public class UserService {
 
         User user = new User(
                 request.name(),
-                request.email()
+                request.email(),
+                passwordEncoder.encode(request.password())
         );
 
         User savedUser = userRepository.save(user);

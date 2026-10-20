@@ -1,4 +1,3 @@
-
 package com.mt.taskapi;
 
 import com.mt.taskapi.model.User;
@@ -11,15 +10,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import org.springframework.security.test.context.support.WithMockUser;
-
-@SpringBootTest(properties = "app.demo.password=test-only-password")
+@SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
 @WithMockUser
@@ -34,9 +34,11 @@ class UserControllerTest {
     @Autowired
     private ProjectRepository projectRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     // =========================
-    // Existing User API Tests
+    // User API Tests
     // =========================
 
     @Test
@@ -45,7 +47,8 @@ class UserControllerTest {
         String json = """
                 {
                     "name": "Alice",
-                    "email": "alice.test@example.com"
+                    "email": "alice.test@example.com",
+                    "password": "Password123!"
                 }
                 """;
 
@@ -55,7 +58,18 @@ class UserControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("Alice"))
                 .andExpect(jsonPath("$.email").value("alice.test@example.com"))
-                .andExpect(jsonPath("$.id").exists());
+                .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.password").doesNotExist());
+
+        User savedUser = userRepository
+                .findByEmail("alice.test@example.com")
+                .orElseThrow();
+
+        assertNotEquals("Password123!", savedUser.getPassword());
+        assertTrue(passwordEncoder.matches(
+                "Password123!",
+                savedUser.getPassword()
+        ));
     }
 
     @Test
@@ -64,7 +78,8 @@ class UserControllerTest {
         String json = """
                 {
                     "name": "Bob",
-                    "email": "invalid-email"
+                    "email": "invalid-email",
+                    "password": "Password123!"
                 }
                 """;
 
@@ -87,7 +102,8 @@ class UserControllerTest {
 
         User existingUser = new User(
                 "Existing Alice",
-                "duplicate.test@example.com"
+                "duplicate.test@example.com",
+                passwordEncoder.encode("ExistingPassword123!")
         );
 
         userRepository.save(existingUser);
@@ -95,7 +111,8 @@ class UserControllerTest {
         String json = """
                 {
                     "name": "Another Alice",
-                    "email": "duplicate.test@example.com"
+                    "email": "duplicate.test@example.com",
+                    "password": "Password123!"
                 }
                 """;
 
@@ -106,12 +123,19 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.status").value(409));
     }
 
+    // =========================
+    // User-Project API Tests
+    // =========================
 
     @Test
     void shouldCreateProjectForExistingUser() throws Exception {
 
         User user = userRepository.save(
-                new User("Alice", "alice.project.test@example.com")
+                new User(
+                        "Alice",
+                        "alice.project.test@example.com",
+                        passwordEncoder.encode("Password123!")
+                )
         );
 
         String json = """
@@ -150,11 +174,19 @@ class UserControllerTest {
     void shouldReturnOnlyProjectsBelongingToUser() throws Exception {
 
         User alice = userRepository.save(
-                new User("Alice", "alice.filter.test@example.com")
+                new User(
+                        "Alice",
+                        "alice.filter.test@example.com",
+                        passwordEncoder.encode("Password123!")
+                )
         );
 
         User bob = userRepository.save(
-                new User("Bob", "bob.filter.test@example.com")
+                new User(
+                        "Bob",
+                        "bob.filter.test@example.com",
+                        passwordEncoder.encode("Password123!")
+                )
         );
 
         Project projectA = new Project("Project A");
@@ -190,7 +222,11 @@ class UserControllerTest {
     void shouldRejectProjectWithBlankName() throws Exception {
 
         User user = userRepository.save(
-                new User("Alice", "alice.validation.test@example.com")
+                new User(
+                        "Alice",
+                        "alice.validation.test@example.com",
+                        passwordEncoder.encode("Password123!")
+                )
         );
 
         String json = """

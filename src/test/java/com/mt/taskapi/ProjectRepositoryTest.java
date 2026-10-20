@@ -5,11 +5,16 @@ import com.mt.taskapi.model.Task;
 import com.mt.taskapi.model.TaskStatus;
 import com.mt.taskapi.repository.ProjectRepository;
 import com.mt.taskapi.repository.TaskRepository;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest(properties = "app.demo.password=test-only-password")
+import static org.junit.jupiter.api.Assertions.*;
+
+@SpringBootTest
+@Transactional
 class ProjectRepositoryTest {
 
     @Autowired
@@ -18,17 +23,23 @@ class ProjectRepositoryTest {
     @Autowired
     private TaskRepository taskRepository;
 
-
     @Test
     void shouldSaveProject() {
+
         Project project = new Project("Backend Learning");
 
-        projectRepository.save(project);
+        Project savedProject = projectRepository.save(project);
+
+        assertNotNull(savedProject.getId());
+        assertEquals("Backend Learning", savedProject.getName());
     }
 
     @Test
     void shouldAssignTasksToProject() {
-        Project project = projectRepository.findById(1L).orElseThrow();
+
+        Project project = projectRepository.save(
+                new Project("Task Assignment Test")
+        );
 
         Task task1 = new Task(
                 "Learn JPA",
@@ -44,8 +55,13 @@ class ProjectRepositoryTest {
                 project
         );
 
-        taskRepository.save(task1);
-        taskRepository.save(task2);
-    }
+        Task savedTask1 = taskRepository.save(task1);
+        Task savedTask2 = taskRepository.save(task2);
 
+        assertNotNull(savedTask1.getId());
+        assertNotNull(savedTask2.getId());
+
+        assertEquals(project.getId(), savedTask1.getProject().getId());
+        assertEquals(project.getId(), savedTask2.getProject().getId());
+    }
 }

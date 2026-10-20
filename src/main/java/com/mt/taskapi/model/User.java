@@ -23,12 +23,20 @@ public class User {
     @Column(unique = true)
     private String email;
 
+    @Column(length = 60)
+    private String password;
+
     public User() {
     }
 
-    public User(String name, String email) {
+    public User(String name, String email, String password) {
         this.name = name;
         this.email = email;
+        this.password = password;
+    }
+
+    public User(String name, String email) {
+        this(name, email, null);
     }
 
     public Long getId() {
@@ -49,5 +57,9 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
     }
 }
