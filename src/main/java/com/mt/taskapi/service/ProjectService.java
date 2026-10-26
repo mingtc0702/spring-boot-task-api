@@ -15,6 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.mt.taskapi.dto.ProjectRequest;
 import com.mt.taskapi.model.User;
 import com.mt.taskapi.exception.UserNotFoundException;
+import com.mt.taskapi.security.CurrentUserService;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 
 
@@ -23,36 +26,40 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
 
     public ProjectService(
             ProjectRepository projectRepository,
             TaskRepository taskRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            CurrentUserService currentUserService) {
 
         this.projectRepository = projectRepository;
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
+        this.currentUserService = currentUserService;
     }
 
 
     @Transactional
     public ProjectResponse createProject(ProjectRequest request) {
 
-        Project project = new Project(request.name());
+        User currentUser = currentUserService.getCurrentUser();
 
-        Project savedProject = projectRepository.save(project);
+        Project project = new Project(request.name(), currentUser);
 
-        return new ProjectResponse(
-                savedProject.getId(),
-                savedProject.getName(),
-                List.of()
-        );
+        Project saved = projectRepository.save(project);
+
+        return toProjectResponse(saved);
     }
 
 
     @Transactional(readOnly = true)
     public List<ProjectResponse> getAllProjects() {
-        return projectRepository.findAll()
+
+        User currentUser = currentUserService.getCurrentUser();
+
+        return projectRepository.findByUserId(currentUser.getId())
                 .stream()
                 .map(this::toProjectResponse)
                 .toList();
@@ -60,8 +67,16 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public ProjectResponse getProjectById(Long id) {
+
+        User currentUser = currentUserService.getCurrentUser();
+
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ProjectNotFoundException(id));
+
+        if (project.getUser() == null
+                || !project.getUser().getId().equals(currentUser.getId())) {
+            throw new ProjectNotFoundException(id);
+        }
 
         return toProjectResponse(project);
     }
@@ -95,6 +110,13 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
+        User currentUser = currentUserService.getCurrentUser();
+
+        if (project.getUser() == null
+                || !project.getUser().getId().equals(currentUser.getId())) {
+            throw new ProjectNotFoundException(projectId);
+        }
+
         Task task = new Task(
                 request.title(),
                 request.description(),
@@ -110,11 +132,17 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public List<TaskResponse> getTasksByProjectId(Long projectId) {
 
-        if (!projectRepository.existsById(projectId)) {
+        User currentUser = currentUserService.getCurrentUser();
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
+
+        if (project.getUser() == null
+                || !project.getUser().getId().equals(currentUser.getId())) {
             throw new ProjectNotFoundException(projectId);
         }
 
-        return taskRepository.findByProjectId(projectId)
+        return taskRepository.findByProjectUserId(projectId)
                 .stream()
                 .map(this::toTaskResponse)
                 .toList();
@@ -125,24 +153,32 @@ public class ProjectService {
             Long userId,
             ProjectRequest request) {
 
-        User user  = userRepository
-                .findById(userId)
-                .orElseThrow(()->new UserNotFoundException(userId));
+        User currentUser = currentUserService.getCurrentUser();
 
-        Project project = new Project(request.name());
+        if (!currentUser.getId().equals(userId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "User projects not found"
+            );
+        }
 
-        project.setUser(user);
+        Project project = new Project(request.name(), currentUser);
 
-        Project savedProject = projectRepository.save(project);
+        Project saved = projectRepository.save(project);
 
-        return toProjectResponse(savedProject);
+        return toProjectResponse(saved);
     }
 
     @Transactional(readOnly = true)
     public List<ProjectResponse> getProjectsByUserId(Long userId) {
 
-        if (!userRepository.existsById(userId)) {
-            throw new UserNotFoundException(userId);
+        User currentUser = currentUserService.getCurrentUser();
+
+        if (!currentUser.getId().equals(userId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "User projects not found"
+            );
         }
 
         return projectRepository.findByUserId(userId)

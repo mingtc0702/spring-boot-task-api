@@ -1,3 +1,4 @@
+
 package com.mt.taskapi;
 
 import com.mt.taskapi.model.User;
@@ -11,18 +12,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-@WithMockUser
 class UserControllerTest {
 
     @Autowired
@@ -36,6 +36,22 @@ class UserControllerTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    private static final String PASSWORD = "Password123!";
+
+    // =========================
+    // Test Helpers
+    // =========================
+
+    private User createTestUser(String name, String email) {
+        return userRepository.save(
+                new User(
+                        name,
+                        email,
+                        passwordEncoder.encode(PASSWORD)
+                )
+        );
+    }
 
     // =========================
     // User API Tests
@@ -66,6 +82,7 @@ class UserControllerTest {
                 .orElseThrow();
 
         assertNotEquals("Password123!", savedUser.getPassword());
+
         assertTrue(passwordEncoder.matches(
                 "Password123!",
                 savedUser.getPassword()
@@ -92,7 +109,13 @@ class UserControllerTest {
     @Test
     void shouldReturn404WhenUserNotFound() throws Exception {
 
-        mockMvc.perform(get("/api/users/999999999"))
+        User alice = createTestUser(
+                "Alice",
+                "alice.notfound.test@example.com"
+        );
+
+        mockMvc.perform(get("/api/users/999999999")
+                        .with(httpBasic(alice.getEmail(), PASSWORD)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
     }
@@ -100,13 +123,10 @@ class UserControllerTest {
     @Test
     void shouldReturn409WhenEmailAlreadyExists() throws Exception {
 
-        User existingUser = new User(
+        createTestUser(
                 "Existing Alice",
-                "duplicate.test@example.com",
-                passwordEncoder.encode("ExistingPassword123!")
+                "duplicate.test@example.com"
         );
-
-        userRepository.save(existingUser);
 
         String json = """
                 {
@@ -130,12 +150,9 @@ class UserControllerTest {
     @Test
     void shouldCreateProjectForExistingUser() throws Exception {
 
-        User user = userRepository.save(
-                new User(
-                        "Alice",
-                        "alice.project.test@example.com",
-                        passwordEncoder.encode("Password123!")
-                )
+        User alice = createTestUser(
+                "Alice",
+                "alice.project.test@example.com"
         );
 
         String json = """
@@ -144,18 +161,29 @@ class UserControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/users/{userId}/projects", user.getId())
+        mockMvc.perform(post(
+                        "/api/users/{userId}/projects",
+                        alice.getId()
+                )
+                        .with(httpBasic(alice.getEmail(), PASSWORD))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.name").value("Spring Boot Learning"))
+                .andExpect(jsonPath("$.name")
+                        .value("Spring Boot Learning"))
                 .andExpect(jsonPath("$.tasks").isArray())
                 .andExpect(jsonPath("$.tasks").isEmpty());
     }
 
     @Test
-    void shouldReturn404WhenCreatingProjectForMissingUser() throws Exception {
+    void shouldReturn404WhenCreatingProjectForMissingUser()
+            throws Exception {
+
+        User alice = createTestUser(
+                "Alice",
+                "alice.missing.project.test@example.com"
+        );
 
         String json = """
                 {
@@ -164,29 +192,24 @@ class UserControllerTest {
                 """;
 
         mockMvc.perform(post("/api/users/999999999/projects")
+                        .with(httpBasic(alice.getEmail(), PASSWORD))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404));
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void shouldReturnOnlyProjectsBelongingToUser() throws Exception {
+    void shouldReturnOnlyProjectsBelongingToUser()
+            throws Exception {
 
-        User alice = userRepository.save(
-                new User(
-                        "Alice",
-                        "alice.filter.test@example.com",
-                        passwordEncoder.encode("Password123!")
-                )
+        User alice = createTestUser(
+                "Alice",
+                "alice.filter.test@example.com"
         );
 
-        User bob = userRepository.save(
-                new User(
-                        "Bob",
-                        "bob.filter.test@example.com",
-                        passwordEncoder.encode("Password123!")
-                )
+        User bob = createTestUser(
+                "Bob",
+                "bob.filter.test@example.com"
         );
 
         Project projectA = new Project("Project A");
@@ -202,31 +225,44 @@ class UserControllerTest {
         projectRepository.save(projectB);
         projectRepository.save(projectC);
 
-        mockMvc.perform(get("/api/users/{userId}/projects", alice.getId()))
+        mockMvc.perform(get(
+                        "/api/users/{userId}/projects",
+                        alice.getId()
+                )
+                        .with(httpBasic(alice.getEmail(), PASSWORD)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[?(@.name == 'Project A')]").exists())
-                .andExpect(jsonPath("$[?(@.name == 'Project B')]").exists())
-                .andExpect(jsonPath("$[?(@.name == 'Project C')]").doesNotExist());
+                .andExpect(jsonPath(
+                        "$[?(@.name == 'Project A')]"
+                ).exists())
+                .andExpect(jsonPath(
+                        "$[?(@.name == 'Project B')]"
+                ).exists())
+                .andExpect(jsonPath(
+                        "$[?(@.name == 'Project C')]"
+                ).doesNotExist());
     }
 
     @Test
-    void shouldReturn404WhenGettingProjectsForMissingUser() throws Exception {
+    void shouldReturn404WhenGettingProjectsForMissingUser()
+            throws Exception {
 
-        mockMvc.perform(get("/api/users/999999999/projects"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404));
+        User alice = createTestUser(
+                "Alice",
+                "alice.missing.list.test@example.com"
+        );
+
+        mockMvc.perform(get("/api/users/999999999/projects")
+                        .with(httpBasic(alice.getEmail(), PASSWORD)))
+                .andExpect(status().isNotFound());
     }
 
     @Test
     void shouldRejectProjectWithBlankName() throws Exception {
 
-        User user = userRepository.save(
-                new User(
-                        "Alice",
-                        "alice.validation.test@example.com",
-                        passwordEncoder.encode("Password123!")
-                )
+        User alice = createTestUser(
+                "Alice",
+                "alice.validation.test@example.com"
         );
 
         String json = """
@@ -235,9 +271,96 @@ class UserControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/users/{userId}/projects", user.getId())
+        mockMvc.perform(post(
+                        "/api/users/{userId}/projects",
+                        alice.getId()
+                )
+                        .with(httpBasic(alice.getEmail(), PASSWORD))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isBadRequest());
+    }
+
+    // =========================
+    // Day 11 Ownership Tests
+    // =========================
+
+    @Test
+    void shouldNotAllowUserToReadAnotherUser()
+            throws Exception {
+
+        User alice = createTestUser(
+                "Alice",
+                "alice.ownership.user.test@example.com"
+        );
+
+        User bob = createTestUser(
+                "Bob",
+                "bob.ownership.user.test@example.com"
+        );
+
+        mockMvc.perform(get("/api/users/{id}", bob.getId())
+                        .with(httpBasic(alice.getEmail(), PASSWORD)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldNotAllowUserToReadAnotherUsersProjects()
+            throws Exception {
+
+        User alice = createTestUser(
+                "Alice",
+                "alice.ownership.list.test@example.com"
+        );
+
+        User bob = createTestUser(
+                "Bob",
+                "bob.ownership.list.test@example.com"
+        );
+
+        Project bobProject = new Project("Bob's Private Project");
+        bobProject.setUser(bob);
+        projectRepository.save(bobProject);
+
+        mockMvc.perform(get(
+                        "/api/users/{userId}/projects",
+                        bob.getId()
+                )
+                        .with(httpBasic(alice.getEmail(), PASSWORD)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldNotAllowUserToCreateProjectForAnotherUser()
+            throws Exception {
+
+        User alice = createTestUser(
+                "Alice",
+                "alice.ownership.create.test@example.com"
+        );
+
+        User bob = createTestUser(
+                "Bob",
+                "bob.ownership.create.test@example.com"
+        );
+
+        String json = """
+                {
+                    "name": "Unauthorized Project"
+                }
+                """;
+
+        mockMvc.perform(post(
+                        "/api/users/{userId}/projects",
+                        bob.getId()
+                )
+                        .with(httpBasic(alice.getEmail(), PASSWORD))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isNotFound());
+
+        assertTrue(
+                projectRepository.findByUserId(bob.getId()).isEmpty()
+        );
     }
 }

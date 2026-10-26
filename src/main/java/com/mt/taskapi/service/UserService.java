@@ -6,6 +6,7 @@ import com.mt.taskapi.exception.EmailAlreadyExistsException;
 import com.mt.taskapi.exception.UserNotFoundException;
 import com.mt.taskapi.model.User;
 import com.mt.taskapi.repository.UserRepository;
+import com.mt.taskapi.security.CurrentUserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,10 +16,16 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CurrentUserService currentUserService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            CurrentUserService currentUserService) {
+
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.currentUserService = currentUserService;
     }
 
 
@@ -44,11 +51,13 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponse getUserById(Long id) {
 
-        User user = userRepository.findById(id)
-                .orElseThrow(() ->
-                        new UserNotFoundException(id));
+        User currentUser = currentUserService.getCurrentUser();
 
-        return toUserResponse(user);
+        if (!currentUser.getId().equals(id)) {
+            throw new UserNotFoundException(id);
+        }
+
+        return toUserResponse(currentUser);
     }
 
     private UserResponse toUserResponse(User user) {

@@ -30,11 +30,6 @@ public class TaskController {
         return taskService.getTaskById(id);
     }
 
-    @PostMapping
-    public TaskResponse createTask(@Valid @RequestBody TaskRequest request) {
-        return taskService.createTask(request);
-    }
-
     @PutMapping("/{id}")
     public TaskResponse updateTask(
             @PathVariable Long id,
