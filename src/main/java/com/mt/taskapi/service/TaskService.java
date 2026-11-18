@@ -10,16 +10,23 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import com.mt.taskapi.security.CurrentUserService;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 public class TaskService {
 
     private final TaskRepository taskRepository;
     private final CurrentUserService currentUserService;
+    private final CacheManager cacheManager;
 
-    public TaskService(TaskRepository taskRepository, CurrentUserService currentUserService) {
+    public TaskService(TaskRepository taskRepository, CurrentUserService currentUserService, CacheManager cacheManager) {
         this.taskRepository = taskRepository;
         this.currentUserService = currentUserService;
+        this.cacheManager = cacheManager;
     }
 
     public List<TaskResponse> getAllTasks() {
@@ -38,9 +45,13 @@ public class TaskService {
     }
 
 
+
+    @Transactional
     public TaskResponse updateTask(Long id, TaskRequest request) {
 
         Task existingTask = findOwnedTask(id);
+
+        Long projectId = existingTask.getProject().getId();
 
         existingTask.setTitle(request.title());
         existingTask.setDescription(request.description());
@@ -48,13 +59,24 @@ public class TaskService {
 
         Task savedTask = taskRepository.save(existingTask);
 
+        evictProjectAfterCommit(projectId);
+
         return toTaskResponse(savedTask);
     }
 
+
+    @Transactional
     public void deleteTask(Long id) {
+
         Task existingTask = findOwnedTask(id);
+
+        Long projectId = existingTask.getProject().getId();
+
         taskRepository.delete(existingTask);
+
+        evictProjectAfterCommit(projectId);
     }
+
 
     private Task findOwnedTask(Long taskId) {
 
@@ -82,4 +104,31 @@ public class TaskService {
                 task.getStatus()
         );
     }
+
+
+    private void evictProjectAfterCommit(Long projectId) {
+
+        if (!TransactionSynchronizationManager
+                .isActualTransactionActive()
+                || !TransactionSynchronizationManager
+                .isSynchronizationActive()) {
+            throw new IllegalStateException(
+                    "Project cache eviction requires an active transaction"
+            );
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        Cache cache = cacheManager.getCache("projects");
+
+                        if (cache != null) {
+                            cache.evictIfPresent(projectId);
+                        }
+                    }
+                }
+        );
+    }
+
 }

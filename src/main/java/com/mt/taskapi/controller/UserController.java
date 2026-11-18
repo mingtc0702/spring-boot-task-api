@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.mt.taskapi.dto.ProjectRequest;
 import com.mt.taskapi.dto.ProjectResponse;
-import com.mt.taskapi.service.ProjectService;
 
 import java.util.List;
 

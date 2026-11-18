@@ -18,6 +18,7 @@ import com.mt.taskapi.exception.UserNotFoundException;
 import com.mt.taskapi.security.CurrentUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.cache.annotation.CacheEvict;
 
 
 
@@ -27,17 +28,20 @@ public class ProjectService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
+    private final ProjectCacheService projectCacheService;
 
     public ProjectService(
             ProjectRepository projectRepository,
             TaskRepository taskRepository,
             UserRepository userRepository,
-            CurrentUserService currentUserService) {
+            CurrentUserService currentUserService,
+            ProjectCacheService projectCacheService) {
 
         this.projectRepository = projectRepository;
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.currentUserService = currentUserService;
+        this.projectCacheService = projectCacheService;
     }
 
 
@@ -78,7 +82,7 @@ public class ProjectService {
             throw new ProjectNotFoundException(id);
         }
 
-        return toProjectResponse(project);
+        return projectCacheService.getCachedProject(id);
     }
 
     private TaskResponse toTaskResponse(Task task) {
@@ -105,6 +109,7 @@ public class ProjectService {
     }
 
     @Transactional
+    @CacheEvict(value = "projects", key = "#projectId")
     public TaskResponse addTaskToProject(Long projectId, TaskRequest request) {
 
         Project project = projectRepository.findById(projectId)

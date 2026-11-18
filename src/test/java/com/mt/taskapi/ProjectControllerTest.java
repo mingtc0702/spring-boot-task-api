@@ -23,10 +23,28 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.support.NoOpCacheManager;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
 class ProjectControllerTest {
+
+
+    @TestConfiguration
+    static class TestCacheConfig {
+
+        @Bean
+        @Primary
+        CacheManager testCacheManager() {
+            return new NoOpCacheManager();
+        }
+    }
+
 
     @Autowired
     private MockMvc mockMvc;
