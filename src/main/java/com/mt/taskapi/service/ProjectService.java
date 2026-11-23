@@ -20,6 +20,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.cache.annotation.CacheEvict;
 
+import com.mt.taskapi.event.TaskCreatedEvent;
+import org.springframework.context.ApplicationEventPublisher;
+import java.time.Instant;
+import java.util.UUID;
+
 
 
 @Service
@@ -29,19 +34,22 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
     private final ProjectCacheService projectCacheService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ProjectService(
             ProjectRepository projectRepository,
             TaskRepository taskRepository,
             UserRepository userRepository,
             CurrentUserService currentUserService,
-            ProjectCacheService projectCacheService) {
+            ProjectCacheService projectCacheService,
+            ApplicationEventPublisher eventPublisher) {
 
         this.projectRepository = projectRepository;
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.currentUserService = currentUserService;
         this.projectCacheService = projectCacheService;
+        this.eventPublisher = eventPublisher;
     }
 
 
@@ -108,6 +116,7 @@ public class ProjectService {
         );
     }
 
+
     @Transactional
     @CacheEvict(value = "projects", key = "#projectId")
     public TaskResponse addTaskToProject(Long projectId, TaskRequest request) {
@@ -131,8 +140,19 @@ public class ProjectService {
 
         Task savedTask = taskRepository.save(task);
 
+        TaskCreatedEvent event = new TaskCreatedEvent(
+                UUID.randomUUID(),
+                "TASK_CREATED",
+                savedTask.getId(),
+                projectId,
+                Instant.now()
+        );
+
+        eventPublisher.publishEvent(event);
+
         return toTaskResponse(savedTask);
     }
+
 
     @Transactional(readOnly = true)
     public List<TaskResponse> getTasksByProjectId(Long projectId) {
